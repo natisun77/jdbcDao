@@ -15,7 +15,7 @@ public class RequestHelper<T> {
     }
 
     public String getQueryForUpdate() {
-        return "UPDATE " + getTableName() + " SET " + getColumnsNames(" = ?, ");
+        return "UPDATE " + getTableName() + " SET " + getColumnsNames(" = ?, ") + " =? WHERE ID = ?";
     }
 
     public String getQueryToGetAll() {
@@ -23,19 +23,19 @@ public class RequestHelper<T> {
     }
 
     public String getQueryToFind() {
-        return "SELECT * FROM " + getTableName() + " WHERE ID = ?";
+        return "SELECT * FROM " + getTableName() + " WHERE ID = ";
     }
 
     public String getQueryToDelete() {
-        return "DELETE * FROM " + getTableName() + " WHERE ID = ?";
+        return "DELETE FROM " + getTableName() + " WHERE ID = ?";
     }
 
     private String getTableName() {
-        return tClass.getName().toLowerCase();
+        return tClass.getSimpleName().toLowerCase();
     }
 
     private String getColumnsNames(String prefix) {
-        Field[] fields = tClass.getDeclaredFields();
+        Field[] fields = getFields();
 
         StringBuilder columns = new StringBuilder();
         for (int i = 0; i < fields.length; i++) {
@@ -48,7 +48,7 @@ public class RequestHelper<T> {
     }
 
     private String getQuestionMarks() {
-        Field[] fields = tClass.getDeclaredFields();
+        Field[] fields = getFields();
 
         StringBuilder questionMarks = new StringBuilder();
         String prefix = ",";
@@ -62,8 +62,7 @@ public class RequestHelper<T> {
     }
 
     public Object[] getBindValues(T t) throws IllegalAccessException {
-        enableAccess();
-        Field[] fields = tClass.getDeclaredFields();
+        Field[] fields = getFields();
         Object[] values = new Object[fields.length];
         for (int i = 0; i < fields.length; i++) {
             values[i] = fields[i].get(t);
@@ -71,11 +70,12 @@ public class RequestHelper<T> {
         return values;
     }
 
-    private void enableAccess() {
+    private Field[] getFields() {
         Field[] fields = tClass.getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
         }
+        return fields;
     }
 
 }

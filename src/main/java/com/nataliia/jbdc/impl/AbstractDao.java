@@ -1,5 +1,6 @@
 package com.nataliia.jbdc.impl;
 
+import com.nataliia.jbdc.DbConnector;
 import com.nataliia.jbdc.GenericDao;
 import org.apache.log4j.Logger;
 
@@ -20,9 +21,9 @@ public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
     private final Connection connection;
     private Class<T> tClass;
 
-    protected AbstractDao(Class<T> tClass, Connection connection) {
+    protected AbstractDao(Class<T> tClass, DbConnector dbConnector) {
         this.tClass = tClass;
-        this.connection = connection;
+        connection = dbConnector.connect();
     }
 
     @Override
@@ -53,12 +54,19 @@ public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
     public T update(T t) {
         if (t != null) {
             RequestHelper<T> request = new RequestHelper<>(tClass);
+
+            Field[] fields = getFields();
+            for (int i = 0; i <fields.length ; i++) {
+                if("id".equals(fields[i].getName().toLowerCase())) {
+                    Object id = fields[i].get(t);
+                }
+            }
             String sql = request.getQueryForUpdate();
             try {
-
                 LOGGER.debug(sql);
                 PreparedStatement preparedStatement = connection.prepareStatement(sql);
                 Object[] params = request.getBindValues(t);
+
                 setStatementParams(preparedStatement, params).executeUpdate();
             } catch (SQLException | IllegalAccessException e) {
                 LOGGER.error("Can't update the object", e);
@@ -80,7 +88,7 @@ public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
             ResultSet resultSet = statement.executeQuery(sql);
 
             Constructor<T> emptyArgsConstructor = tClass.getDeclaredConstructor();
-            Field[] declaredFields = tClass.getDeclaredFields();
+            Field[] declaredFields = getFields();
 
             while (resultSet.next()) {
                 T t = emptyArgsConstructor.newInstance();
@@ -105,19 +113,21 @@ public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
             preparedStatement.setObject(1, id);
 
             ResultSet resultSet = preparedStatement.executeQuery();
-            Constructor<T> emptyArgsConstructor = tClass.getDeclaredConstructor();
-            T t = emptyArgsConstructor.newInstance();
+            if (resultSet.next()) {
+                Constructor<T> emptyArgsConstructor = tClass.getDeclaredConstructor();
+                T t = emptyArgsConstructor.newInstance();
 
-            Field[] declaredFields = tClass.getDeclaredFields();
+                Field[] declaredFields = getFields();
 
-            for (int i = 0; i < declaredFields.length; i++) {
-                declaredFields[i].set(t, resultSet.getObject(i + 1));
+                for (int i = 0; i < declaredFields.length; i++) {
+                    declaredFields[i].set(t, resultSet.getObject(i + 1));
+                }
+                return t;
             }
-            return t;
         } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             LOGGER.error("Can't get Objects from DB with ID" + id, e);
-            return null;
         }
+        return null;
     }
 
     @Override
@@ -133,4 +143,13 @@ public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
             LOGGER.error("Can't delete Objects from DB with ID" + id, e);
         }
     }
+
+    private Field[] getFields() {
+        Field[] fields = tClass.getDeclaredFields();
+        for (Field field : fields) {
+            field.setAccessible(true);
+        }
+        return fields;
+    }
+
 }
