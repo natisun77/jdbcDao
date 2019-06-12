@@ -1,12 +1,16 @@
 package com.nataliia.model;
 
+import com.nataliia.jbdc.impl.TableName;
+
+@TableName("good")
 public class Good {
 
     private long id;
     private String name;
     private String description;
     private double price;
-    public Good(){
+
+    public Good() {
     }
 
     public Good(long id, String name, String description, double price) {

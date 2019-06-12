@@ -4,9 +4,14 @@ import java.lang.reflect.Field;
 
 public class RequestHelper<T> {
     private Class<T> tClass;
+    private String tableName;
 
     public RequestHelper(Class<T> tClass) {
         this.tClass = tClass;
+        TableName tableNameA = tClass.getDeclaredAnnotation(TableName.class);
+        if (tableNameA != null) {
+            tableName = tableNameA.value();
+        }
     }
 
     public String getQueryForSave() {
@@ -15,7 +20,7 @@ public class RequestHelper<T> {
     }
 
     public String getQueryForUpdate() {
-        return "UPDATE " + getTableName() + " SET " + getColumnsNames(" = ?, ") + " =? WHERE ID = ?";
+        return "UPDATE " + getTableName() + " SET " + getColumnsNames(" = ?, ") + " = ? WHERE ID = ?";
     }
 
     public String getQueryToGetAll() {
@@ -23,7 +28,7 @@ public class RequestHelper<T> {
     }
 
     public String getQueryToFind() {
-        return "SELECT * FROM " + getTableName() + " WHERE ID = ";
+        return "SELECT * FROM " + getTableName() + " WHERE ID = ?";
     }
 
     public String getQueryToDelete() {
@@ -31,7 +36,7 @@ public class RequestHelper<T> {
     }
 
     private String getTableName() {
-        return tClass.getSimpleName().toLowerCase();
+        return tableName;
     }
 
     private String getColumnsNames(String prefix) {
@@ -49,7 +54,6 @@ public class RequestHelper<T> {
 
     private String getQuestionMarks() {
         Field[] fields = getFields();
-
         StringBuilder questionMarks = new StringBuilder();
         String prefix = ",";
         for (int i = 0; i < fields.length; i++) {
@@ -77,5 +81,4 @@ public class RequestHelper<T> {
         }
         return fields;
     }
-
 }

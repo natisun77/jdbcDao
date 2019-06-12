@@ -1,5 +1,8 @@
 package com.nataliia.model;
 
+import com.nataliia.jbdc.impl.TableName;
+
+@TableName("user")
 public class User {
     private Long id;
     private String name;

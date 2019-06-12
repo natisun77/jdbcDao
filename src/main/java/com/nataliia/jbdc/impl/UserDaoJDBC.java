@@ -1,6 +1,5 @@
 package com.nataliia.jbdc.impl;
 
-
 import com.nataliia.jbdc.DbConnector;
 import com.nataliia.jbdc.UserDao;
 import com.nataliia.model.User;
