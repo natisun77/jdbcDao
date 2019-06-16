@@ -15,8 +15,8 @@ public class AbstractDaoTest {
     @Test
     public void saveAndGet() {
         User user = new User(15L, "nata", "@", "1111");
-        assertTrue(usersDao.save(user));
-        assertEquals(user, usersDao.get(15L).get());
+        usersDao.save(user);
+        assertEquals(user, usersDao.get(15L));
     }
 
     @Test
@@ -25,7 +25,7 @@ public class AbstractDaoTest {
         usersDao.save(user);
         User user1 = new User(18L, "alex", "@1111", "2222");
         usersDao.update(user1);
-        assertEquals(user1, usersDao.get(18L).get());
+        assertEquals(user1, usersDao.get(18L));
     }
 
     @Test
@@ -34,7 +34,6 @@ public class AbstractDaoTest {
         User user1 = new User(21L, "alex", "@", "1111");
         usersDao.save(user);
         usersDao.save(user1);
-
         List<User> list = usersDao.getAll();
         assertTrue(list.contains(user));
         assertTrue(list.contains(user1));
@@ -42,8 +41,9 @@ public class AbstractDaoTest {
 
     @Test
     public void deleteAndGet() {
-        usersDao.delete(15L);
-        User user = new User(15L, "nata", "@", "1111");
-        assertTrue(usersDao.save(user));
+        usersDao.delete(16L);
+        User user = new User(16L, "nata", "@", "1111");
+        usersDao.save(user);
+        assertEquals(user, usersDao.get(16L));
     }
 }

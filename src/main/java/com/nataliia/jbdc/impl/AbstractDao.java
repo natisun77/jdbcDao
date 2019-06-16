@@ -14,7 +14,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
 
@@ -28,7 +27,7 @@ public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
     }
 
     @Override
-    public boolean save(T t) {
+    public T save(T t) {
         if (t != null) {
             RequestHelper<T> request = new RequestHelper<>(tClass);
             String sql = request.getQueryForSave();
@@ -36,12 +35,13 @@ public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
             try {
                 PreparedStatement preparedStatement = connection.prepareStatement(sql);
                 Object[] params = request.getBindValues(t);
-                return setStatementParams(preparedStatement, params).executeUpdate() > 0;
+                setStatementParams(preparedStatement, params).executeUpdate();
             } catch (SQLException | IllegalAccessException e) {
                 LOGGER.error("Can't add the object", e);
+                throw new RuntimeException("Can't add the object", e);
             }
         }
-        return false;
+        return t;
     }
 
     private PreparedStatement setStatementParams(PreparedStatement preparedStatement, Object[] params) throws SQLException {
@@ -52,7 +52,7 @@ public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
     }
 
     @Override
-    public Optional<T> update(T t) {
+    public T update(T t) {
         if (t != null) {
             RequestHelper<T> request = new RequestHelper<>(tClass);
             Field[] fields = getFields();
@@ -77,13 +77,13 @@ public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
                 Object[] paramsWithId = new Object[params.length + 1];
                 System.arraycopy(params, 0, paramsWithId, 0, params.length);
                 paramsWithId[params.length] = id;
-
                 setStatementParams(preparedStatement, paramsWithId).executeUpdate();
             } catch (SQLException | IllegalAccessException e) {
                 LOGGER.error("Can't update the object with ID=" + id, e);
+                throw new RuntimeException("Can't update the object", e);
             }
         }
-        return Optional.ofNullable(t);
+        return t;
     }
 
     @Override
@@ -111,7 +111,7 @@ public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
     }
 
     @Override
-    public Optional<T> get(ID id) {
+    public T get(ID id) {
         try {
             RequestHelper<T> request = new RequestHelper<>(tClass);
             String sql = request.getQueryToFind();
@@ -126,12 +126,13 @@ public abstract class AbstractDao<T, ID> implements GenericDao<T, ID> {
                 for (int i = 0; i < declaredFields.length; i++) {
                     declaredFields[i].set(t, resultSet.getObject(i + 1));
                 }
-                return Optional.ofNullable(t);
+                return t;
             }
         } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
             LOGGER.error("Can't get object with ID " + id + " from DB.", e);
+
         }
-        return Optional.empty();
+        throw new RuntimeException("Can't find the object");
     }
 
     @Override
